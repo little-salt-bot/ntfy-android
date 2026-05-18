@@ -45,6 +45,14 @@ class Colors {
             }
         }
 
+        fun cardKeyboardFocusBackgroundColor(context: Context): Int {
+            return if (isDarkThemeOn(context)) {
+                MaterialColors.getColor(context, R.attr.colorSurfaceContainerHighest, Color.GRAY)
+            } else {
+                MaterialColors.getColor(context, R.attr.colorSurfaceContainerHigh, Color.GRAY)
+            }
+        }
+
         fun statusBarNormal(context: Context, dynamicColors: Boolean, darkMode: Boolean): Int {
             val default = context.resources.getColor(R.color.action_bar, null)
             return if (dynamicColors) {

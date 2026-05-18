@@ -102,6 +102,9 @@ class DetailActivity : AppCompatActivity(), NotificationFragment.NotificationSet
     private lateinit var toolbar: com.google.android.material.appbar.MaterialToolbar
     private var toolbarTextColor: Int = 0
 
+    // Keyboard navigation focus (-1 = no focus)
+    private var keyboardFocusPosition: Int = -1
+
     // Action mode stuff
     private var actionMode: ActionMode? = null
     private val actionModeCallback = object : ActionMode.Callback {
@@ -528,12 +531,63 @@ class DetailActivity : AppCompatActivity(), NotificationFragment.NotificationSet
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        // When in action mode (messages selected), Delete/Backspace = delete selected messages
-        if (actionMode != null && (keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_FORWARD_DEL)) {
-            onMultiDeleteClick()
-            return true
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
+                if (adapter.currentList.isEmpty()) return super.onKeyDown(keyCode, event)
+                val count = adapter.currentList.size
+                if (keyboardFocusPosition == -1) {
+                    keyboardFocusPosition = if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) 0 else count - 1
+                } else {
+                    keyboardFocusPosition = if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                        (keyboardFocusPosition + 1).coerceAtMost(count - 1)
+                    } else {
+                        (keyboardFocusPosition - 1).coerceAtLeast(0)
+                    }
+                }
+                mainList.scrollToPosition(keyboardFocusPosition)
+                refreshKeyboardFocus()
+                return true
+            }
+            KeyEvent.KEYCODE_DEL, KeyEvent.KEYCODE_FORWARD_DEL -> {
+                if (actionMode != null) {
+                    onMultiDeleteClick()
+                    return true
+                }
+                if (keyboardFocusPosition >= 0 && keyboardFocusPosition < adapter.currentList.size) {
+                    onDeleteKeyboardFocusedItem()
+                    return true
+                }
+            }
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    private fun onDeleteKeyboardFocusedItem() {
+        val notification = adapter.get(keyboardFocusPosition)
+        val deletedPosition = keyboardFocusPosition
+        lifecycleScope.launch(Dispatchers.IO) {
+            repository.markAsDeleted(notification.id)
+        }
+        val snackbar = Snackbar.make(mainList, R.string.detail_item_snack_deleted, Snackbar.LENGTH_SHORT)
+        snackbar.setAction(R.string.detail_item_snack_undo) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                repository.undeleteNotification(notification.id)
+            }
+        }
+        snackbar.show()
+        // Move focus to adjacent item after removal
+        val count = adapter.currentList.size
+        if (count <= 1) {
+            keyboardFocusPosition = -1
+        } else if (deletedPosition >= count - 1) {
+            keyboardFocusPosition = count - 2
+        }
+        refreshKeyboardFocus()
+    }
+
+    private fun refreshKeyboardFocus() {
+        adapter.keyboardFocusPosition = keyboardFocusPosition
+        adapter.notifyItemRangeChanged(0, adapter.currentList.size)
     }
 
     override fun onResume() {

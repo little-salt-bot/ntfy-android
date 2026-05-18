@@ -47,6 +47,7 @@ class DetailAdapter(private val activity: Activity, private val lifecycleScope: 
     ListAdapter<Notification, DetailAdapter.DetailViewHolder>(TopicDiffCallback) {
     private val markwon: Markwon = MarkwonFactory.createForMessage(activity)
     val selected = mutableSetOf<String>() // Notification IDs
+    var keyboardFocusPosition: Int = -1 // -1 = no keyboard focus
 
     /* Creates and inflates view and return TopicViewHolder. */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DetailViewHolder {
@@ -57,7 +58,7 @@ class DetailAdapter(private val activity: Activity, private val lifecycleScope: 
 
     /* Gets current topic and uses it to bind view. */
     override fun onBindViewHolder(holder: DetailViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        holder.bind(getItem(position), position == keyboardFocusPosition)
     }
 
     fun get(position: Int): Notification {
@@ -108,7 +109,7 @@ class DetailAdapter(private val activity: Activity, private val lifecycleScope: 
         private val actionsWrapperView: ConstraintLayout = itemView.findViewById(R.id.detail_item_actions_wrapper)
         private val actionsFlow: Flow = itemView.findViewById(R.id.detail_item_actions_flow)
 
-        fun bind(notification: Notification) {
+        fun bind(notification: Notification, isKeyboardFocused: Boolean = false) {
             this.notification = notification
 
             val context = itemView.context
@@ -152,6 +153,8 @@ class DetailAdapter(private val activity: Activity, private val lifecycleScope: 
             }
             if (selected.contains(notification.id)) {
                 cardView.setCardBackgroundColor(Colors.cardSelectedBackgroundColor(context))
+            } else if (isKeyboardFocused) {
+                cardView.setCardBackgroundColor(Colors.cardKeyboardFocusBackgroundColor(context))
             } else {
                 cardView.setCardBackgroundColor(Colors.cardBackgroundColor(context))
             }

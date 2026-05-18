@@ -529,7 +529,7 @@ class DetailActivity : AppCompatActivity(), NotificationFragment.NotificationSet
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         // When in action mode (messages selected), Delete/Backspace = delete selected messages
-        if (actionMode != null && (keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_FORWARD_DELETE)) {
+        if (actionMode != null && (keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_FORWARD_DEL)) {
             onMultiDeleteClick()
             return true
         }

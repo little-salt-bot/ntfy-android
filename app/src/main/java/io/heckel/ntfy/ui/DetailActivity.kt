@@ -63,6 +63,7 @@ import androidx.core.view.get
 import androidx.core.net.toUri
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
+import android.view.KeyEvent
 import android.widget.ImageButton
 import com.google.android.material.color.MaterialColors
 
@@ -524,6 +525,15 @@ class DetailActivity : AppCompatActivity(), NotificationFragment.NotificationSet
         if (this::messageBarText.isInitialized) {
             messageBarText.text?.clear()
         }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        // When in action mode (messages selected), Delete/Backspace = delete selected messages
+        if (actionMode != null && (keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_FORWARD_DELETE)) {
+            onMultiDeleteClick()
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     override fun onResume() {
